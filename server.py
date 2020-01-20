@@ -50,7 +50,7 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
         for request in requests:
             print(request)
-        print('\n\n\n')
+        
 
         method = requests[0].split(' ')[0]
         self.parser['method'] = method
@@ -62,21 +62,20 @@ class MyWebServer(socketserver.BaseRequestHandler):
                 if(self.parser['sourcePath'][-1]=='/'):
                     res = self.avail_methods[method]()
                 else:
-                    res = self.return_header('301')+'Location: '+sourcePath+'/\r\n'
+                    res = self.return_header('301',[sourcePath])
             else:
                 res = self.avail_methods[method]()
         else:
-            res = self.return_res('405')
+            res = self.return_header('405')
 
         # print ("Got a request of: %s\n" % self.data)
         self.request.sendall(res.encode(encoding='UTF-8'))
 
+
     def do_get(self):
         try:
-            path = self.parser['sourcePath'] + 'index.html' if self.parser['sourcePath'][-1] == '/' else self.parser['sourcePath']
+            path = self.parser['sourcePath'] + ('index.html' if self.parser['sourcePath'][-1] == '/' else '') 
 
-            #if('../' in os.path.relpath(path,'./')):
-             #   raise FileNotFoundError
             f = open(path,'r')
             content = ''
             while True:
@@ -85,38 +84,50 @@ class MyWebServer(socketserver.BaseRequestHandler):
                     f.close()
                     break
                 content += text
+
             file_type = path.split('.')[-1]
-            return self.return_res('200',file_type,content)
+
+            content_type_dic = {
+                'html': 'Content-Type: text/html\r\n',
+                'css' : 'Content-Type: text/css\r\n'
+            }
+            content_type = content_type_dic[file_type]
+            print(path)
+            print(content_type)
+            print('\n\n\n')
+
+            return self.return_header('200',[content_type,content])
         except Exception as e:
             #if e == FileNotFoundError:
-            return self.return_res('404')
+            return self.return_header('404')
             print(e)
 
-    def return_res(self,status_code='200',file_type = 'html',content=''):
 
-        content_type_dic = {
-            'html': 'Content-Type: text/html; charset=utf-8\r\n',
-            'css' : 'Content-Type: text/css; charset=utf-8\r\n'
-        }
+    def return_header(self,status_code,args=[]):
+        if(status_code == '200'):
+            return self.ok(args)
+        if(status_code == '301'):
+            return self.move_permanently(args)
+        if(status_code == '404'):
+            return 'HTTP/1.1 404 Not Found\r\n'
+        if(status_code == '405'):
+            return 'HTTP/1.1 405 Method Not Allowed\r\n'
 
-        header = self.return_header(status_code)
+    def move_permanently(self,args):
+        header = 'HTTP/1.1 301 Moved Permanently\r\n'
+        new_location = 'Location: '+args[0]+'/\r\n'
+        res = header+new_location
+        #print(res)
+        return res
 
-        contentLen = 'Content-Length: ' + str(len(content)) + '\r\n'
+    def ok(self,args):
+        header = 'HTTP/1.1 200 OK\r\n'
+        contentLen = 'Content-Length: ' + str(len(args[1])) + '\r\n'
+        res = header+contentLen+args[0]+'\r\n'+args[1]
+        #print(res)
+        return res
 
-        return header+contentLen+content_type_dic[file_type]+content
 
-
-
-    def return_header(self,status_code='200'):
-        header_dic = {
-            '200': 'HTTP/1.1 200 OK\r\n',
-            '301': 'HTTP/1.1 301 Moved Permanently',
-            '404': 'HTTP/1.1 404 Not Found\r\n',
-            '405': 'HTTP/1.1 405 Method Not Allowed\r\n',
-            
-        }
-
-        return header_dic[status_code]
 
 
 
