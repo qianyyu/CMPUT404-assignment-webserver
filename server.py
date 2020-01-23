@@ -76,7 +76,6 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
     def validation(self,source_path):
         if('..' in source_path.split('/') or '.' in source_path.split('/')):
-            print('hahah')
             return False
             # raise Exception('Only files in ./www and deeper will be served.')
         return True
