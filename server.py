@@ -28,9 +28,6 @@ import os
 # try: curl -v -X GET http://127.0.0.1:8080/
 
 
-# https://stackoverflow.com/questions/2052390/manually-raising-throwing-an-exception-in-python
-
-
 BUFFER_SIZE = 1024
 
 class MyWebServer(socketserver.BaseRequestHandler):
@@ -75,8 +72,11 @@ class MyWebServer(socketserver.BaseRequestHandler):
 
 
     def validation(self,source_path):
-        if('..' in source_path.split('/') or '.' in source_path.split('/')):
+        if('../' in os.path.relpath(source_path,'www/')):
             return False
+
+        # if('..' in source_path.split('/') or '.' in source_path.split('/')):
+            # return False
             # raise Exception('Only files in ./www and deeper will be served.')
         return True
 
