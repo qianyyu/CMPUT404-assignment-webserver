@@ -70,7 +70,6 @@ class MyWebServer(socketserver.BaseRequestHandler):
             res = self.request_methods[method]()
         return res
 
-
     def validation(self,source_path):
         if('../' in os.path.relpath(source_path,'www/')):
             return False
